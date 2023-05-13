@@ -36,7 +36,7 @@ class ListJenisPinjaman extends ChangeNotifier {
 
   void fetchData() async {
     String url =
-        "http://178.128.17.76:8000/jenis_pinjaman/search?id=$selectedPinjaman";
+        "http://178.128.17.76:8000/jenis_pinjaman/id=$selectedPinjaman";
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -62,6 +62,7 @@ class MyApp extends StatelessWidget {
 //pilihan dropdown
   final List<DropdownMenuItem<String>> pilihan = [
     const DropdownMenuItem<String>(
+      value: "0",
       child: Text("Pilih jenis pinjaman"),
     ),
     const DropdownMenuItem<String>(

@@ -9,6 +9,18 @@ class JenisPinjaman {
   JenisPinjaman({required this.idPinjaman, required this.namaPinjaman});
 }
 
+class DetilJenisPinjaman {
+  String idDetilPinjaman;
+  String namaDetilPinjaman;
+  String bungaDetilPinjaman;
+  String syariah;
+  DetilJenisPinjaman(
+      {required this.idDetilPinjaman,
+      required this.namaDetilPinjaman,
+      required this.bungaDetilPinjaman,
+      required this.syariah});
+}
+
 class ListJenisPinjaman extends Cubit<List<JenisPinjaman>> {
   String selectedPinjaman = "1";
 
@@ -32,6 +44,45 @@ class ListJenisPinjaman extends Cubit<List<JenisPinjaman>> {
 
   void fetchData() async {
     String url = "http://178.128.17.76:8000/jenis_pinjaman/$selectedPinjaman";
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      setFromJson(jsonDecode(response.body));
+    } else {
+      throw Exception('Gagal load');
+    }
+  }
+}
+
+class ListDetilJenisPinjaman extends Cubit<List<DetilJenisPinjaman>> {
+  String selectedDetilPinjaman = "1";
+
+  ListDetilJenisPinjaman() : super([]);
+
+  void setSelectedPinjaman(String pilihanPinjaman) {
+    selectedDetilPinjaman = pilihanPinjaman;
+    fetchDataDetil();
+  }
+
+  void setFromJson(List<dynamic> json) {
+    List<DetilJenisPinjaman> listDetilJenisPinjaman = [];
+    for (var val in json) {
+      var idDetilPinjaman = val["id"];
+      var namaDetilPinjaman = val["nama"][0];
+      var bungaDetilPinjaman = val["bunga"][0];
+      var syariah = val["is_syariah"][0];
+      listDetilJenisPinjaman.add(DetilJenisPinjaman(
+          idDetilPinjaman: idDetilPinjaman,
+          namaDetilPinjaman: namaDetilPinjaman,
+          bungaDetilPinjaman: bungaDetilPinjaman,
+          syariah: syariah));
+    }
+    emit(listDetilJenisPinjaman);
+  }
+
+  void fetchDataDetil() async {
+    String url =
+        "http://178.128.17.76:8000/detil_jenis_pinjaman/$selectedDetilPinjaman";
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {

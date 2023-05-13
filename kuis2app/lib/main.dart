@@ -1,42 +1,37 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'dart:convert';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class JenisPinjaman {
-  String id;
+  String idPinjaman;
   String namaPinjaman;
-  JenisPinjaman({required this.id, required this.namaPinjaman}); //konstruktor
+  JenisPinjaman({required this.idPinjaman, required this.namaPinjaman});
 }
 
-class ListJenisPinjaman extends ChangeNotifier {
-  String selectedPinjaman = "1";
+class ListJenisPinjaman extends Cubit<List<JenisPinjaman>> {
+  String selectedPinjaman = "0";
 
-  List<JenisPinjaman> listJenisPinjaman = <JenisPinjaman>[];
+  ListJenisPinjaman() : super([]);
 
-  ListJenisPinjaman({required this.listJenisPinjaman}) {
-    fetchData();
-  }
-
-  void setSelectedPinjaman(String jenis) {
-    selectedPinjaman = jenis;
+  void setSelectedPinjaman(String pilihanPinjaman) {
+    selectedPinjaman = pilihanPinjaman;
     fetchData();
   }
 
   void setFromJson(List<dynamic> json) {
-    listJenisPinjaman.clear();
+    List<JenisPinjaman> listJenisPinjaman = [];
     for (var val in json) {
-      var id = val["id"];
+      var idPinjaman = val["id"];
       var namaPinjaman = val["nama"][0];
-      listJenisPinjaman.add(JenisPinjaman(id: id, namaPinjaman: namaPinjaman));
-      notifyListeners();
+      listJenisPinjaman.add(
+          JenisPinjaman(idPinjaman: idPinjaman, namaPinjaman: namaPinjaman));
     }
+    emit(listJenisPinjaman);
   }
 
   void fetchData() async {
-    String url =
-        "http://178.128.17.76:8000/jenis_pinjaman/id=$selectedPinjaman";
+    String url = "http://178.128.17.76:8000/jenis_pinjaman/$selectedPinjaman";
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -49,18 +44,22 @@ class ListJenisPinjaman extends ChangeNotifier {
 
 void main() {
   runApp(
-    ChangeNotifierProvider<ListJenisPinjaman>(
-      create: (context) => ListJenisPinjaman(listJenisPinjaman: []),
+    MultiBlocProvider(
+      providers: [
+        BlocProvider<ListJenisPinjaman>(
+          create: (context) => ListJenisPinjaman(),
+        ),
+      ],
       child: MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  MyApp({super.key});
+  MyApp({Key? key}) : super(key: key);
 
-//pilihan dropdown
-  final List<DropdownMenuItem<String>> pilihan = [
+  //pilihan dropdown
+  final List<DropdownMenuItem<String>> pilihanPinjaman = [
     const DropdownMenuItem<String>(
       value: "0",
       child: Text("Pilih jenis pinjaman"),
@@ -78,70 +77,66 @@ class MyApp extends StatelessWidget {
       child: Text("Jenis Pinjaman 3"),
     )
   ];
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'My App P2P',
       home: Scaffold(
-          appBar: AppBar(
-            title: Text('My App P2P'),
-            centerTitle: true,
-          ),
-          body: Column(
-            children: [
-              //nama
-              Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text(
-                      '2106000, Sabila Rosad; 2100187, Muhammad Hilmy Rasyad Sofyan; Saya berjanji tidak akan berbuat curang data atau membantu orang lain berbuat curang')),
-              //dropdown
-              Consumer<ListJenisPinjaman>(
-                builder: (context, model, child) {
-                  return DropdownButton<String>(
-                    value: model.selectedPinjaman,
-                    onChanged: (String? newValue) {
-                      model.setSelectedPinjaman(newValue!);
-                    },
-                    items: pilihan,
-                  );
+        appBar: AppBar(
+          title: const Text('My App P2P'),
+          centerTitle: true,
+        ),
+        body: Column(
+          //body
+          children: [
+            //nama
+            Padding(
+                padding: EdgeInsets.all(20),
+                child: Text(
+                    '2106000, Sabila Rosad; 2100187, Muhammad Hilmy Rasyad Sofyan; Saya berjanji tidak akan berbuat curang data atau membantu orang lain berbuat curang')),
+            //dropdown
+            DropdownButton<String>(
+              value: context.watch<ListJenisPinjaman>().selectedPinjaman,
+              onChanged: (String? newValue) {
+                context
+                    .read<ListJenisPinjaman>()
+                    .setSelectedPinjaman(newValue!);
+              },
+              items: pilihanPinjaman,
+            ),
+            Expanded(
+              child: BlocBuilder<ListJenisPinjaman, List<JenisPinjaman>>(
+                builder: (context, state) {
+                  if (state.isNotEmpty) {
+                    return ListView.builder(
+                      itemCount: state.length,
+                      itemBuilder: (context, index) {
+                        return Container(
+                          decoration: BoxDecoration(border: Border.all()),
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                state[index].idPinjaman,
+                              ),
+                              Text(state[index].namaPinjaman),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  } else {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
                 },
               ),
-              Expanded(
-                child: Consumer<ListJenisPinjaman>(
-                  builder: (context, model, child) {
-                    if (model.listJenisPinjaman.isNotEmpty) {
-                      return ListView.builder(
-                        itemCount: model.listJenisPinjaman.length,
-                        itemBuilder: (context, index) {
-                          return Container(
-                            decoration: BoxDecoration(border: Border.all()),
-                            padding: const EdgeInsets.all(14),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  model.listJenisPinjaman[index].id,
-                                ),
-                                Text(
-                                  model.listJenisPinjaman[index].namaPinjaman,
-                                ),
-                              ],
-                            ),
-                          );
-                        },
-                      );
-                    } else {
-                      return const Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                  },
-                ),
-              ),
-            ],
-          )),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

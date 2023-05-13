@@ -10,7 +10,7 @@ class JenisPinjaman {
 }
 
 class ListJenisPinjaman extends Cubit<List<JenisPinjaman>> {
-  String selectedPinjaman = "0";
+  String selectedPinjaman = "1";
 
   ListJenisPinjaman() : super([]);
 
@@ -112,7 +112,6 @@ class MyApp extends StatelessWidget {
                       itemCount: state.length,
                       itemBuilder: (context, index) {
                         return Container(
-                          decoration: BoxDecoration(border: Border.all()),
                           padding: const EdgeInsets.all(14),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
